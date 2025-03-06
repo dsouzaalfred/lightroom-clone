@@ -52,18 +52,81 @@ def edit_image():
     try:
         # Load image using OpenCV
         img = cv2.imread(filepath)
+        img = img.astype(np.float32) / 255.0  # Normalize to 0-1 range
         
-        # Apply adjustments
+        # Apply light adjustments
+        if 'exposure' in adjustments:
+            # Apply exposure adjustment
+            exposure_value = adjustments['exposure']
+            # Simple linear scaling for exposure
+            img = np.clip(img * exposure_value, 0, 1)
+        
+        if any(key in adjustments for key in ['highlights', 'shadows', 'whites', 'blacks']):
+            # Convert normalized image to uint8 for LAB conversion
+            img_uint8 = (img * 255).astype(np.uint8)
+            
+            # Convert to LAB color space for better light adjustments
+            lab = cv2.cvtColor(img_uint8, cv2.COLOR_BGR2LAB)
+            L = lab[:,:,0].astype(np.float32)
+            
+            # Apply highlights adjustment
+            if 'highlights' in adjustments:
+                mask = (L > 127).astype(np.float32)
+                # Map adjustment value to pixel adjustment
+                adjustment = (adjustments['highlights'] - 1.0) * 50
+                L = np.clip(L + adjustment * mask, 0, 255)
+            
+            # Apply shadows adjustment
+            if 'shadows' in adjustments:
+                mask = (L < 127).astype(np.float32)
+                # Map adjustment value to pixel adjustment
+                adjustment = (adjustments['shadows'] - 1.0) * 50
+                L = np.clip(L + adjustment * mask, 0, 255)
+            
+            # Apply whites adjustment
+            if 'whites' in adjustments:
+                mask = (L > 230).astype(np.float32)
+                # Map adjustment value to pixel adjustment
+                adjustment = (adjustments['whites'] - 1.0) * 25
+                L = np.clip(L + adjustment * mask, 0, 255)
+            
+            # Apply blacks adjustment
+            if 'blacks' in adjustments:
+                mask = (L < 25).astype(np.float32)
+                # Map adjustment value to pixel adjustment
+                adjustment = (adjustments['blacks'] - 1.0) * 25
+                L = np.clip(L + adjustment * mask, 0, 255)
+            
+            # Ensure L channel stays in valid range
+            L = np.clip(L, 0, 255)
+            lab[:,:,0] = L.astype(np.uint8)
+            
+            # Convert back to BGR and normalize
+            img = cv2.cvtColor(lab, cv2.COLOR_LAB2BGR).astype(np.float32) / 255.0
+        
+        # Apply color adjustments
         if 'brightness' in adjustments:
-            img = cv2.convertScaleAbs(img, alpha=adjustments['brightness'], beta=0)
+            # Apply brightness adjustment
+            brightness_value = adjustments['brightness']
+            img = np.clip(img * brightness_value, 0, 1)
         
         if 'contrast' in adjustments:
-            img = cv2.convertScaleAbs(img, alpha=adjustments['contrast'], beta=0)
+            # Apply contrast adjustment
+            contrast_value = adjustments['contrast']
+            img = np.clip((img - 0.5) * contrast_value + 0.5, 0, 1)
         
         if 'saturation' in adjustments:
-            hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-            hsv[:,:,1] = hsv[:,:,1] * adjustments['saturation']
-            img = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+            # Apply saturation adjustment
+            saturation_value = adjustments['saturation']
+            img_uint8 = (img * 255).astype(np.uint8)
+            hsv = cv2.cvtColor(img_uint8, cv2.COLOR_BGR2HSV)
+            hsv = hsv.astype(np.float32)
+            hsv[:,:,1] = np.clip(hsv[:,:,1] * saturation_value, 0, 255)
+            hsv = hsv.astype(np.uint8)
+            img = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR).astype(np.float32) / 255.0
+        
+        # Convert back to uint8 (0-255 range)
+        img = np.clip(img * 255.0, 0, 255).astype(np.uint8)
         
         # Save edited image
         edited_filename = f'edited_{filename}'

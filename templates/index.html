@@ -21,20 +21,89 @@
                 </div>
                 
                 <div class="adjustments-panel">
-                    <h3>Adjustments</h3>
+                    <h3>Light</h3>
                     <div class="slider-group">
-                        <label for="brightness">Brightness</label>
-                        <input type="range" id="brightness" min="0.5" max="2" step="0.1" value="1">
+                        <div class="slider-header">
+                            <label for="exposure">Exposure</label>
+                            <span class="slider-value" id="exposure-value">0</span>
+                        </div>
+                        <div class="slider-container">
+                            <input type="range" id="exposure" min="-100" max="100" value="0" class="slider">
+                            <div class="slider-center-mark"></div>
+                        </div>
                     </div>
                     <div class="slider-group">
-                        <label for="contrast">Contrast</label>
-                        <input type="range" id="contrast" min="0.5" max="2" step="0.1" value="1">
+                        <div class="slider-header">
+                            <label for="highlights">Highlights</label>
+                            <span class="slider-value" id="highlights-value">0</span>
+                        </div>
+                        <div class="slider-container">
+                            <input type="range" id="highlights" min="-100" max="100" value="0" class="slider">
+                            <div class="slider-center-mark"></div>
+                        </div>
                     </div>
                     <div class="slider-group">
-                        <label for="saturation">Saturation</label>
-                        <input type="range" id="saturation" min="0.5" max="2" step="0.1" value="1">
+                        <div class="slider-header">
+                            <label for="shadows">Shadows</label>
+                            <span class="slider-value" id="shadows-value">0</span>
+                        </div>
+                        <div class="slider-container">
+                            <input type="range" id="shadows" min="-100" max="100" value="0" class="slider">
+                            <div class="slider-center-mark"></div>
+                        </div>
                     </div>
-                    <button id="resetBtn" class="secondary-btn">Reset</button>
+                    <div class="slider-group">
+                        <div class="slider-header">
+                            <label for="whites">Whites</label>
+                            <span class="slider-value" id="whites-value">0</span>
+                        </div>
+                        <div class="slider-container">
+                            <input type="range" id="whites" min="-100" max="100" value="0" class="slider">
+                            <div class="slider-center-mark"></div>
+                        </div>
+                    </div>
+                    <div class="slider-group">
+                        <div class="slider-header">
+                            <label for="blacks">Blacks</label>
+                            <span class="slider-value" id="blacks-value">0</span>
+                        </div>
+                        <div class="slider-container">
+                            <input type="range" id="blacks" min="-100" max="100" value="0" class="slider">
+                            <div class="slider-center-mark"></div>
+                        </div>
+                    </div>
+                    <h3>Color</h3>
+                    <div class="slider-group">
+                        <div class="slider-header">
+                            <label for="brightness">Brightness</label>
+                            <span class="slider-value" id="brightness-value">0</span>
+                        </div>
+                        <div class="slider-container">
+                            <input type="range" id="brightness" min="-100" max="100" value="0" class="slider">
+                            <div class="slider-center-mark"></div>
+                        </div>
+                    </div>
+                    <div class="slider-group">
+                        <div class="slider-header">
+                            <label for="contrast">Contrast</label>
+                            <span class="slider-value" id="contrast-value">0</span>
+                        </div>
+                        <div class="slider-container">
+                            <input type="range" id="contrast" min="-100" max="100" value="0" class="slider">
+                            <div class="slider-center-mark"></div>
+                        </div>
+                    </div>
+                    <div class="slider-group">
+                        <div class="slider-header">
+                            <label for="saturation">Saturation</label>
+                            <span class="slider-value" id="saturation-value">0</span>
+                        </div>
+                        <div class="slider-container">
+                            <input type="range" id="saturation" min="-100" max="100" value="0" class="slider">
+                            <div class="slider-center-mark"></div>
+                        </div>
+                    </div>
+                    <button id="resetBtn" class="secondary-btn">Reset All</button>
                 </div>
 
                 <div class="crop-panel hidden">
@@ -65,6 +134,6 @@
     </div>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script src="{{ url_for('static', filename='script.js') }}" defer></script>
 </body>
 </html>

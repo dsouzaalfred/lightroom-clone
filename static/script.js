@@ -6,11 +6,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const cropBtn = document.getElementById('cropBtn');
     const cancelCropBtn = document.getElementById('cancelCropBtn');
     const aspectRatioSelect = document.getElementById('aspectRatio');
-    const sliders = ['brightness', 'contrast', 'saturation'].map(id => document.getElementById(id));
+    const sliders = ['exposure', 'highlights', 'shadows', 'whites', 'blacks', 'brightness', 'contrast', 'saturation'].map(id => document.getElementById(id));
     
     let currentImage = null;
     let originalImage = null;
-    let updateTimer = null;
     let cropper = null;
     let isCropping = false;
 
@@ -60,24 +59,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     // Handle adjustments
-    async function applyAdjustments(overrideAdjustments = null) {
-        if (!currentImage) return;
+    async function applyAdjustments(adjustments) {
+        if (!currentImage || !adjustments) return;
         
-        const adjustments = overrideAdjustments || {
-            brightness: parseFloat(document.getElementById('brightness').value),
-            contrast: parseFloat(document.getElementById('contrast').value),
-            saturation: parseFloat(document.getElementById('saturation').value)
-        };
+        const img = imagePreview.querySelector('img');
+        if (!img) return;
+        
+        // Add loading class to indicate adjustment in progress
+        if (!img.classList.contains('adjusting')) {
+            img.classList.add('adjusting');
+        }
         
         try {
-            const img = imagePreview.querySelector('img');
-            if (!img) return;
-            
-            // Add loading class to indicate adjustment in progress
-            if (!img.classList.contains('adjusting')) {
-                img.classList.add('adjusting');
-            }
-            
             const response = await fetch('/edit', {
                 method: 'POST',
                 headers: {
@@ -90,80 +83,130 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             
             const data = await response.json();
-            if (response.ok) {
-                // Create a new Image object to preload
-                const newImage = new Image();
-                
-                // Set up onload before setting src to ensure it catches
-                newImage.onload = () => {
-                    requestAnimationFrame(() => {
-                        img.src = newImage.src;
-                        img.classList.remove('adjusting');
-                        currentImage = data.edited_filename;
-                    });
-                };
-                
-                // Add cache-busting and start loading
-                newImage.src = `/uploads/${data.edited_filename}?t=${Date.now()}`;
-            } else {
-                console.error('Error applying adjustments:', data.error);
-                img.classList.remove('adjusting');
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to apply adjustments');
             }
+            
+            // Create a new Image object to preload
+            const newImage = new Image();
+            
+            // Set up onload before setting src to ensure it catches
+            newImage.onload = () => {
+                requestAnimationFrame(() => {
+                    img.src = newImage.src;
+                    img.classList.remove('adjusting');
+                    currentImage = data.edited_filename;
+                });
+            };
+            
+            // Add error handler
+            newImage.onerror = () => {
+                console.error('Failed to load adjusted image');
+                img.classList.remove('adjusting');
+            };
+            
+            // Add cache-busting and start loading
+            newImage.src = `/uploads/${data.edited_filename}?t=${Date.now()}`;
         } catch (error) {
             console.error('Error:', error);
-            const img = imagePreview.querySelector('img');
-            if (img) img.classList.remove('adjusting');
+            img.classList.remove('adjusting');
+        }
+    }
+
+    // Function to convert slider value to adjustment value
+    function sliderToAdjustment(value, type) {
+        // Convert -100 to 100 range to appropriate adjustment value
+        const val = parseFloat(value);
+        if (val === 0) return 1;  // Neutral value
+        
+        // Special handling for exposure
+        if (type === 'exposure') {
+            // For exposure: linear scaling
+            // Positive values increase exposure (brighter)
+            // Negative values decrease exposure (darker)
+            const factor = val / 100;
+            return factor >= 0 ? 1 + factor : 1 / (1 + Math.abs(factor));
+        }
+        
+        // For other adjustments
+        const factor = val / 100;
+        return factor >= 0 ? 1 + factor : Math.max(0.2, 1 - Math.abs(factor));
+    }
+
+    // Function to check if all sliders are at neutral position
+    function areAllSlidersNeutral() {
+        return ['exposure', 'highlights', 'shadows', 'whites', 'blacks',
+                'brightness', 'contrast', 'saturation'].every(id => {
+            const slider = document.getElementById(id);
+            return !slider || parseFloat(slider.value) === 0;
+        });
+    }
+
+    // Function to update slider value display
+    function updateSliderValue(id, value) {
+        const valueDisplay = document.getElementById(`${id}-value`);
+        if (valueDisplay) {
+            valueDisplay.textContent = Math.round(value);
         }
     }
 
     // Add event listeners to sliders
+    let updateTimer = null;
     let isAdjusting = false;
-    let pendingUpdate = null;
-    let debounceTimer = null;
     
     sliders.forEach(slider => {
-        let lastValue = slider.value;
+        if (!slider) return; // Skip if slider not found
+        
+        // Update initial value display
+        updateSliderValue(slider.id, slider.value);
         
         slider.addEventListener('input', () => {
-            // Only update if value has changed
-            if (lastValue === slider.value) return;
-            lastValue = slider.value;
+            // Update value display
+            updateSliderValue(slider.id, slider.value);
             
-            // Clear any existing timers
+            // Clear any existing timer
             if (updateTimer) clearTimeout(updateTimer);
-            if (debounceTimer) clearTimeout(debounceTimer);
-            
-            // If we're already adjusting, store the latest values
-            if (isAdjusting) {
-                pendingUpdate = {
-                    brightness: parseFloat(document.getElementById('brightness').value),
-                    contrast: parseFloat(document.getElementById('contrast').value),
-                    saturation: parseFloat(document.getElementById('saturation').value)
-                };
-                return;
-            }
             
             // Set a new timer to update after a short delay
             updateTimer = setTimeout(async () => {
-                isAdjusting = true;
-                await applyAdjustments();
+                if (!currentImage) return;  // Don't apply if no image is loaded
+                if (isAdjusting) return;    // Don't queue up adjustments
                 
-                // If there's a pending update, apply it after a short delay
-                if (pendingUpdate) {
-                    const finalUpdate = pendingUpdate;
-                    pendingUpdate = null;
+                try {
+                    isAdjusting = true;
                     
-                    // Add a small delay before applying the final update
-                    debounceTimer = setTimeout(async () => {
-                        isAdjusting = false;
-                        if (finalUpdate) {
-                            await applyAdjustments(finalUpdate);
+                    // Get all current slider values
+                    const currentAdjustments = {};
+                    ['exposure', 'highlights', 'shadows', 'whites', 'blacks',
+                     'brightness', 'contrast', 'saturation'].forEach(id => {
+                        const slider = document.getElementById(id);
+                        if (slider) {
+                            const value = parseFloat(slider.value);
+                            // Pass the adjustment type to handle exposure differently
+                            currentAdjustments[id] = sliderToAdjustment(value, id);
                         }
-                    }, 50);
-                } else {
+                    });
+                    
+                    // Check if all adjustments are neutral
+                    const allNeutral = Object.values(currentAdjustments).every(val => val === 1);
+                    
+                    if (allNeutral && originalImage) {
+                        // If all adjustments are neutral, revert to original
+                        currentImage = originalImage;
+                        updateImagePreview(currentImage);
+                    } else {
+                        // Apply adjustments
+                        await applyAdjustments(currentAdjustments);
+                    }
+                } catch (error) {
+                    console.error('Error applying adjustments:', error);
+                } finally {
                     isAdjusting = false;
+                    // Remove loading class from image
+                    const img = imagePreview.querySelector('img');
+                    if (img) img.classList.remove('adjusting');
                 }
-            }, 16); // Using requestAnimationFrame timing (~16ms)
+            }, 50); // Quick response time
         });
     });
     
@@ -173,18 +216,28 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     function resetAdjustments() {
-        document.getElementById('brightness').value = 1;
-        document.getElementById('contrast').value = 1;
-        document.getElementById('saturation').value = 1;
+        if (!originalImage) return;
         
-        if (originalImage) {
+        // Reset all adjustments to default (0)
+        ['exposure', 'highlights', 'shadows', 'whites', 'blacks',
+         'brightness', 'contrast', 'saturation'].forEach(id => {
+            const slider = document.getElementById(id);
+            if (slider) {
+                slider.value = 0;
+                updateSliderValue(id, 0);
+            }
+        });
+        
+        // Revert to original image immediately
+        if (areAllSlidersNeutral()) {
             currentImage = originalImage;
             updateImagePreview(currentImage);
-            // Reset cropper but keep crop panel visible
-            if (cropper) {
-                cropper.destroy();
-                cropper = null;
-            }
+        }
+        
+        // Reset cropper but keep crop panel visible
+        if (cropper) {
+            cropper.destroy();
+            cropper = null;
             isCropping = false;
         }
     }
@@ -308,13 +361,4 @@ document.addEventListener('DOMContentLoaded', () => {
             initCropping();
         }
     });
-
-    function updateImagePreview(filename) {
-        // Destroy existing cropper if it exists
-        if (cropper) {
-            cropper.destroy();
-            cropper = null;
-        }
-        imagePreview.innerHTML = `<img src="/uploads/${filename}" alt="Preview">`;
-    }
 });
