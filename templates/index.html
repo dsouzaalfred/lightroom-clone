@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lightroom Clone</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <h1>Lightroom Clone</h1>
+        </header>
+        
+        <main>
+            <div class="sidebar">
+                <div class="upload-section">
+                    <input type="file" id="imageUpload" accept=".jpg,.jpeg,.png" class="hidden">
+                    <button id="uploadBtn" class="primary-btn">Upload Photo</button>
+                </div>
+                
+                <div class="adjustments-panel">
+                    <h3>Adjustments</h3>
+                    <div class="slider-group">
+                        <label for="brightness">Brightness</label>
+                        <input type="range" id="brightness" min="0.5" max="2" step="0.1" value="1">
+                    </div>
+                    <div class="slider-group">
+                        <label for="contrast">Contrast</label>
+                        <input type="range" id="contrast" min="0.5" max="2" step="0.1" value="1">
+                    </div>
+                    <div class="slider-group">
+                        <label for="saturation">Saturation</label>
+                        <input type="range" id="saturation" min="0.5" max="2" step="0.1" value="1">
+                    </div>
+                    <button id="resetBtn" class="secondary-btn">Reset</button>
+                </div>
+            </div>
+            
+            <div class="image-container">
+                <div id="imagePreview">
+                    <p class="placeholder-text">Upload an image to start editing</p>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
