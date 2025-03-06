@@ -3,6 +3,9 @@
     --secondary-color: #0984e3;
     --bg-color: #f5f6fa;
     --text-color: #2d3436;
+    --header-height: 60px;
+    --main-spacing: 1rem;
+    --content-height: calc(100vh - var(--header-height) - (var(--main-spacing) * 2));
 }
 
 * {
@@ -18,31 +21,42 @@ body {
 }
 
 .app-container {
-    min-height: 100vh;
+    height: 100vh;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 header {
     background-color: var(--primary-color);
     color: white;
-    padding: 1rem 2rem;
+    padding: 0.75rem 2rem;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    flex-shrink: 0;
+    height: var(--header-height);
+    display: flex;
+    align-items: center;
 }
 
 main {
     display: flex;
     flex: 1;
-    padding: 2rem;
-    gap: 2rem;
+    padding: var(--main-spacing);
+    gap: var(--main-spacing);
+    height: calc(100vh - var(--header-height));
+    overflow: hidden;
+    min-height: 0;
 }
 
 .sidebar {
     width: 300px;
     background: white;
-    padding: 1.5rem;
+    padding: var(--main-spacing);
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    overflow-y: auto;
+    height: var(--content-height);
+    min-height: 0;
 }
 
 .image-container {
@@ -54,6 +68,16 @@ main {
     align-items: center;
     justify-content: center;
     overflow: hidden;
+    position: relative;
+    height: var(--content-height);
+    min-height: 0;
+    padding: calc(var(--main-spacing) * 0.75);
+    will-change: contents;
+    backface-visibility: hidden;
+    transform: translateZ(0);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    contain: content;
 }
 
 #imagePreview {
@@ -62,12 +86,29 @@ main {
     display: flex;
     align-items: center;
     justify-content: center;
+    min-height: 0;
 }
 
 #imagePreview img {
     max-width: 100%;
-    max-height: 100%;
+    max-height: calc(var(--content-height) - var(--main-spacing));
     object-fit: contain;
+    display: block;
+    border-radius: 4px;
+    transition: opacity 80ms ease-out;
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+    transform: translateZ(0);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+}
+
+#imagePreview img.adjusting {
+    opacity: 0.95;
+    transition: opacity 50ms ease-in;
+    pointer-events: none;
 }
 
 .placeholder-text {
@@ -137,4 +178,67 @@ input[type="range"]::-webkit-slider-thumb {
 
 .primary-btn:active, .secondary-btn:active {
     transform: translateY(0);
+}
+
+/* Crop Panel Styles */
+.crop-panel {
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid #eee;
+}
+
+.crop-controls {
+    margin-top: 1rem;
+}
+
+.crop-select {
+    width: 100%;
+    padding: 0.8rem;
+    border: 1px solid #dfe6e9;
+    border-radius: 4px;
+    background-color: white;
+    font-size: 14px;
+    margin-bottom: 1rem;
+    cursor: pointer;
+}
+
+.crop-buttons {
+    display: flex;
+    gap: 1rem;
+}
+
+.crop-buttons .secondary-btn {
+    flex: 1;
+    margin-top: 0;
+}
+
+/* Cropper.js custom styles */
+.cropper-container {
+    width: 100% !important;
+    height: calc(var(--content-height) - var(--main-spacing)) !important;
+}
+
+.cropper-view-box {
+    outline: 2px solid var(--secondary-color);
+    outline-color: var(--secondary-color);
+}
+
+.cropper-line {
+    background-color: var(--secondary-color);
+}
+
+.cropper-point {
+    background-color: var(--secondary-color);
+    width: 10px;
+    height: 10px;
+    opacity: 0.75;
+}
+
+/* Crop panel visibility */
+.crop-panel.hidden {
+    display: none;
+}
+
+.cropper-face {
+    background-color: transparent;
 }

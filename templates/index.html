@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lightroom Clone</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
@@ -35,6 +36,24 @@
                     </div>
                     <button id="resetBtn" class="secondary-btn">Reset</button>
                 </div>
+
+                <div class="crop-panel hidden">
+                    <h3>Crop</h3>
+                    <div class="crop-controls">
+                        <select id="aspectRatio" class="crop-select">
+                            <option value="free">Free</option>
+                            <option value="1:1">Square (1:1)</option>
+                            <option value="4:3">4:3</option>
+                            <option value="16:9">16:9</option>
+                            <option value="3:4">Portrait (3:4)</option>
+                            <option value="2:3">Portrait (2:3)</option>
+                        </select>
+                        <div class="crop-buttons">
+                            <button id="cropBtn" class="secondary-btn">Apply Crop</button>
+                            <button id="cancelCropBtn" class="secondary-btn">Cancel</button>
+                        </div>
+                    </div>
+                </div>
             </div>
             
             <div class="image-container">
@@ -45,6 +64,7 @@
         </main>
     </div>
     
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>

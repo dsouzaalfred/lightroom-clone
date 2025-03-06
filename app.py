@@ -79,6 +79,46 @@ def edit_image():
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
+@app.route('/crop', methods=['POST'])
+def crop_image():
+    data = request.json
+    filename = data.get('filename')
+    crop_data = data.get('crop')
+    
+    if not filename or not crop_data:
+        return jsonify({'error': 'Missing filename or crop data'}), 400
+    
+    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    if not os.path.exists(filepath):
+        return jsonify({'error': 'File not found'}), 404
+    
+    try:
+        # Load image using OpenCV
+        img = cv2.imread(filepath)
+        
+        # Extract crop coordinates
+        x, y, width, height = int(crop_data['x']), int(crop_data['y']), int(crop_data['width']), int(crop_data['height'])
+        
+        # Ensure coordinates are within image bounds
+        height_img, width_img = img.shape[:2]
+        x = max(0, min(x, width_img - 1))
+        y = max(0, min(y, height_img - 1))
+        width = min(width, width_img - x)
+        height = min(height, height_img - y)
+        
+        # Crop the image
+        cropped_img = img[y:y+height, x:x+width]
+        
+        # Save cropped image
+        cropped_filename = f'cropped_{filename}'
+        cropped_filepath = os.path.join(app.config['UPLOAD_FOLDER'], cropped_filename)
+        cv2.imwrite(cropped_filepath, cropped_img)
+        
+        return jsonify({'filename': cropped_filename}), 200
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)
     app.run(host='0.0.0.0', port=5003, debug=True)
